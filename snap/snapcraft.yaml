@@ -1,0 +1,115 @@
+name: kalliope
+version: '0.1'
+summary: kalliope, your customized personal assistant
+description: |
+  Kalliope is a framework that will help you to create your own personal assistant.
+
+  https://kalliope-project.github.io/
+
+grade: devel
+confinement: strict
+base: core18
+
+parts:
+
+  alsa-mixin:
+    plugin: dump
+    source: https://github.com/diddlesnaps/snapcraft-alsa.git
+    source-subdir: snapcraft-assets
+    build-packages:
+      - libasound2-dev
+    stage-packages:
+      - libasound2
+      - libasound2-plugins
+      - libportaudio2
+      - pulseaudio
+      - alsa-utils
+      - libslang2
+
+  kalliope:
+    after: [alsa-mixin]
+    stage:
+      - -usr/share/alsa
+      - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+      - -usr/lib/$SNAPCRAFT_ARCH_TRIPLET/libasound*
+    plugin: python
+    source: .
+    # python-packages:
+    #   - pip
+    build-packages:
+      - build-essential
+      - portaudio19-dev
+    stage-packages:
+      - git-all
+      - locales
+      - libatlas3-base
+      - libmagic1
+      - libgpm2
+      - libglu1-mesa
+      - libpython3.6
+      - libpython3.7
+      - mplayer
+      - sox
+      - freeglut3
+      - libttspico-utils
+
+  python3:
+    source: ""
+    plugin: python
+    python-packages:
+      - pip
+    override-prime: |
+      set -ex
+      snapcraftctl prime
+      cd $SNAPCRAFT_PRIME/usr/bin/
+      ln -sfn python3 python
+
+layout:
+  /usr/share/pico:
+    bind: $SNAP/usr/share/pico
+  /usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib:
+    bind: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/alsa-lib
+  # The install app can call git clone which looks exec in /usr/share/git-core
+  # The actual error thrown is : 'fatal: Unable to find remote helper for 'https''
+  # Note that some people suggests to fix by
+  # uninstalling Git, install curl-devel, and then installing Git again
+  /usr/share/git-core:
+    bind: $SNAP/usr/share/git-core
+
+apps:
+
+  start:
+    environment:
+      LC_ALL: C.UTF-8
+    command-chain: ["snap/command-chain/alsa-launch"]
+    command: kalliope start
+    plugs:
+      - home
+      - audio-record
+      - audio-playback
+      - network
+      - network-bind
+
+  # install cmd runs an ansible_playbook task
+  # which relies uppon Python multithreading which
+  # is problematic so far.
+  # see https://github.com/sergiusens/snapcraft-preload/issues/2#issuecomment-629343101
+  # As a workaround, install does not install the dependencies
+  # and we leave it to the user to do so manually with the 'pip' app.
+  install:
+    environment:
+      LC_ALL: C.UTF-8
+      GIT_EXEC_PATH: $SNAP/usr/lib/git-core/
+      PIP_USER: 1
+    command: kalliope install --no-deps
+    plugs: [home, network]
+
+  uninstall:
+    command: kalliope uninstall
+    plugs: [home]
+
+  pip:
+    command: python -m pip
+    environment:
+      PIP_USER: 1
+    plugs: [network, home]
