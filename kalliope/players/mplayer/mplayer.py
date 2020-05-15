@@ -34,10 +34,15 @@ class Mplayer(object):
         .. warnings:: Class Method and Public
         """
 
-        mplayer_exec_path = [MPLAYER_EXEC_PATH]
+        # we try to get the path from the env
+        mplayer_exec_path = cls._get_mplayer_path()
+        # if still None, we set a default value
+        if mplayer_exec_path is None:
+            mplayer_exec_path = MPLAYER_EXEC_PATH
+
         mplayer_options = ['-slave', '-quiet']
         mplayer_command = list()
-        mplayer_command.extend(mplayer_exec_path)
+        mplayer_command.extend([mplayer_exec_path])
         mplayer_command.extend(mplayer_options)
 
         mplayer_command.append(filepath)
@@ -46,3 +51,13 @@ class Mplayer(object):
         fnull = open(os.devnull, 'w')
 
         subprocess.call(mplayer_command, stdout=fnull, stderr=fnull)
+
+    @staticmethod
+    def _get_mplayer_path():
+        prog = "mplayer"
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, prog)
+            if os.path.isfile(exe_file):
+                return exe_file
+        return None
