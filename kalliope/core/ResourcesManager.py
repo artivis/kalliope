@@ -61,7 +61,7 @@ class ResourcesManager(object):
         self.dna = None
         self.sudo_password = kwargs.get('sudo_password', None)
 
-    def install(self, force=False):
+    def install(self, force=False, no_deps=None):
         """
         Module installation method.
         :arg force: True to skip the version compatibility
@@ -115,15 +115,17 @@ class ResourcesManager(object):
 
         # if the target_path exists, then run the install file within the new repository
         if target_path is None:
-            raise ResourcesManagerException("Resource already present")
+            logger.warning("Resource already present")
+            # raise ResourcesManagerException("Resource already present")
         else:
-            self.install_file_path = target_path + os.sep + INSTALL_FILE_NAME
-            if self.run_ansible_playbook_module(install_file_path=self.install_file_path):
-                Utils.print_success("Module: %s installed" % module_name)
-                return self.dna
-            else:
-                Utils.print_danger("Module: %s not installed" % module_name)
-                return None
+            if not no_deps:
+                self.install_file_path = target_path + os.sep + INSTALL_FILE_NAME
+                if self.run_ansible_playbook_module(install_file_path=self.install_file_path):
+                    Utils.print_success("Module: %s installed" % module_name)
+                    return self.dna
+                else:
+                    Utils.print_danger("Module: %s not installed" % module_name)
+                    return None
 
     def uninstall(self, neuron_name=None,
                   tts_name=None,

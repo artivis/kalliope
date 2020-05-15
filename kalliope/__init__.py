@@ -57,6 +57,8 @@ def parse_args(args):
     parser.add_argument("--debug", action='store_true',
                         help="Show debug output")
     parser.add_argument("--git-url", help="Git URL of the neuron to install")
+    parser.add_argument("--no-deps", action='store_true',
+                        help="Do not install a neurons dependencies.")
     parser.add_argument("--neuron-name", help="Neuron name to uninstall")
     parser.add_argument("--stt-name", help="STT name to uninstall")
     parser.add_argument("--tts-name", help="TTS name to uninstall")
@@ -106,7 +108,7 @@ def main():
                 "git_url": parser.git_url
             }
             res_manager = ResourcesManager(**parameters)
-            res_manager.install()
+            res_manager.install(no_deps=parser.no_deps)
         return
 
     # uninstall modules
